@@ -50,8 +50,10 @@ class FileComparison:
         self.unique_in_second: list[LineMeta] = []
 
     def __repr__(self):
-        return f"{self.__class__.__name__}( {self.uniqueness_score}%, {self.first_file_meta.file_path} <> {self.second_file_meta.file_path} )"
+        return f"{self.__class__.__name__}( similarity {self.get_similarity()}%, {self.first_file_meta.file_path} <> {self.second_file_meta.file_path} )"
 
+    def get_similarity(self):
+        return 100 - self.uniqueness_score
 
 class Comparator:
 
