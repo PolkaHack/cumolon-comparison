@@ -78,18 +78,18 @@ def write_report_partial_duplicates(partially_duplicated_files: list[FileCompari
 
 def write_report_unique_files(fully_unique_first: list[FileMeta], fully_unique_second: list[FileMeta]):
     with open(fully_unique_files, 'w+') as f_unique:
-        msg_1 = f'Found {len(fully_unique_first)} 100% unique files for first\\\n'
-        msg_2 = f'Found {len(fully_unique_second)} 100% unique files for second'
+        msg_1 = f'Found {len(fully_unique_first)} 100% unique files for the european repository\\\n'
+        # msg_2 = f'Found {len(fully_unique_second)} 100% unique files for second'
         print(msg_1.replace('\n', ''))
-        print(msg_2.replace('\n', ''))
+        # print(msg_2.replace('\n', ''))
         f_unique.write(msg_1)
-        f_unique.write(msg_2)
+        # f_unique.write(msg_2)
         f_unique.write('<br/><br/><br/><br/>\n')
         for first_file_meta in fully_unique_first:
             f_unique.write(f'{md_indent}{len(first_file_meta.line_metas)} lines \t\t {format_file_path(first_file_meta.file_path)}\\\n')
-        f_unique.write('<br/><br/><br/><br/>\n')
-        for second_file_meta in fully_unique_second:
-            f_unique.write(f'{md_indent}{len(second_file_meta.line_metas)} lines \t\t {format_file_path(second_file_meta.file_path)}\\\n')
+        # f_unique.write('<br/><br/><br/><br/>\n')
+        # for second_file_meta in fully_unique_second:
+        #     f_unique.write(f'{md_indent}{len(second_file_meta.line_metas)} lines \t\t {format_file_path(second_file_meta.file_path)}\\\n')
 
 
 

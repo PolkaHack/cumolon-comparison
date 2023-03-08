@@ -1,5 +1,5 @@
-Found 22 100% unique files for first\
-Found 8 100% unique files for second<br/><br/><br/><br/>
+Found 22 100% unique files for the european repository\
+<br/><br/><br/><br/>
 &nbsp;&nbsp;&nbsp;&nbsp;1 lines 		 [./resources/european/README.md](.././resources/european/README.md)\
 &nbsp;&nbsp;&nbsp;&nbsp;43 lines 		 [./resources/european/web/tsconfig.json](.././resources/european/web/tsconfig.json)\
 &nbsp;&nbsp;&nbsp;&nbsp;0 lines 		 [./resources/european/web/src/assets/images/home/favicon2.ico](.././resources/european/web/src/assets/images/home/favicon2.ico)\
@@ -22,12 +22,3 @@ Found 8 100% unique files for second<br/><br/><br/><br/>
 &nbsp;&nbsp;&nbsp;&nbsp;399 lines 		 [./resources/european/service/src/parachain/staking/base/service/moonbeam-staking-base-service.ts](.././resources/european/service/src/parachain/staking/base/service/moonbeam-staking-base-service.ts)\
 &nbsp;&nbsp;&nbsp;&nbsp;7 lines 		 [./resources/european/service/src/parachain/staking/base/service/moonriver-staking-base-service.ts](.././resources/european/service/src/parachain/staking/base/service/moonriver-staking-base-service.ts)\
 &nbsp;&nbsp;&nbsp;&nbsp;60 lines 		 [./resources/european/service/src/common/orm/database.provider.v2/portal.ts](.././resources/european/service/src/common/orm/database.provider.v2/portal.ts)\
-<br/><br/><br/><br/>
-&nbsp;&nbsp;&nbsp;&nbsp;32 lines 		 [./resources/asia/README.md](.././resources/asia/README.md)\
-&nbsp;&nbsp;&nbsp;&nbsp;6824 lines 		 [./resources/asia/ui/yarn.lock](.././resources/asia/ui/yarn.lock)\
-&nbsp;&nbsp;&nbsp;&nbsp;3 lines 		 [./resources/asia/ui/src/assets/images/home/sort-arrow-bottom2.svg](.././resources/asia/ui/src/assets/images/home/sort-arrow-bottom2.svg)\
-&nbsp;&nbsp;&nbsp;&nbsp;3 lines 		 [./resources/asia/ui/src/assets/images/home/sort-arrow-bottom.svg](.././resources/asia/ui/src/assets/images/home/sort-arrow-bottom.svg)\
-&nbsp;&nbsp;&nbsp;&nbsp;3 lines 		 [./resources/asia/ui/src/assets/images/home/sort-arrow-top2.svg](.././resources/asia/ui/src/assets/images/home/sort-arrow-top2.svg)\
-&nbsp;&nbsp;&nbsp;&nbsp;3 lines 		 [./resources/asia/ui/src/assets/images/home/sort-arrow-top.svg](.././resources/asia/ui/src/assets/images/home/sort-arrow-top.svg)\
-&nbsp;&nbsp;&nbsp;&nbsp;1 lines 		 [./resources/asia/service/README.md](.././resources/asia/service/README.md)\
-&nbsp;&nbsp;&nbsp;&nbsp;26 lines 		 [./resources/asia/service/src/parachain/staking/core/chain/chain-connect.module.ts](.././resources/asia/service/src/parachain/staking/core/chain/chain-connect.module.ts)\
