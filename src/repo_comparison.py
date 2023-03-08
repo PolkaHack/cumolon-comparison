@@ -8,15 +8,19 @@ from .plot import plot_similarity_bar_chart
 
 european_root = './resources/european'
 asia_root = './resources/asia'
-duplicated_report_file = './report/duplicated.txt'
-partially_duplicated_report_file = './report/partially_duplicated.txt'
-partially_duplicated_detailed_report_file = './report/partially_duplicated_detailed.txt'
-low_tolerance_file = './report/low_tolerance.txt'
-fully_unique_files = './report/unique.txt'
+duplicated_report_file = './report/duplicated.md'
+partially_duplicated_report_file = './report/partially_duplicated.md'
+partially_duplicated_detailed_report_file = './report/partially_duplicated_detailed.md'
+fully_unique_files = './report/unique.md'
 similarity_bar_chart_picture_directory = './report'
 
 similarity = 80
-similarity_lower_bound = 10 # files that are < 10 similar are considered different
+similarity_lower_bound = 10  # files that are < 10 similar are considered different
+
+md_indent = '&nbsp;&nbsp;&nbsp;&nbsp;' \
+            ''
+def format_file_path(file_path):
+    return f'[{file_path}](../{file_path})'
 
 
 def write_report_full_duplicates(duplicated_files: list[FileComparison]):
@@ -25,9 +29,10 @@ def write_report_full_duplicates(duplicated_files: list[FileComparison]):
         print(msg.replace('\n', ''))
         f_dup.write(msg)
         for file_comparison in duplicated_files:
-            f_dup.write(f'Identical files found:\n')
-            f_dup.write(f'\t{file_comparison.first_file_meta.file_path}\n')
-            f_dup.write(f'\t{file_comparison.second_file_meta.file_path}\n\n')
+            f_dup.write(f'Identical files found:\\\n')
+            f_dup.write(f'\t{md_indent}{format_file_path(file_comparison.first_file_meta.file_path)}\\\n')
+            #f_dup.write(f'\t{file_comparison.first_file_meta.file_path}\n')
+            f_dup.write(f'\t{md_indent}{format_file_path(file_comparison.second_file_meta.file_path)}\n\n')
 
 
 def write_report_partial_duplicates(partially_duplicated_files: list[FileComparison]):
@@ -42,13 +47,13 @@ def write_report_partial_duplicates(partially_duplicated_files: list[FileCompari
         for file_comparison in partially_duplicated_files:
             f_part_dup.write(
                 f'Partially similar files found. First length {len(file_comparison.first_file_meta.line_metas)}, '
-                f'Second length {len(file_comparison.second_file_meta.line_metas)},  '
-                f'The files are {100 - file_comparison.uniqueness_score}% identical'
-                f'The files differ in {max(len(file_comparison.unique_in_first), len(file_comparison.unique_in_second))} lines:\n')
+                f'Second length {len(file_comparison.second_file_meta.line_metas)}, '
+                f'The files are {100 - file_comparison.uniqueness_score}% identical, '
+                f'The files differ in {max(len(file_comparison.unique_in_first), len(file_comparison.unique_in_second))} lines:\\\n')
             if file_comparison.first_file_meta.file_name != file_comparison.second_file_meta.file_name:
                 f_part_dup.write('File names differ\n')
-            f_part_dup.write(f'\t{file_comparison.first_file_meta.file_path}\n')
-            f_part_dup.write(f'\t{file_comparison.second_file_meta.file_path}\n\n')
+            f_part_dup.write(f'\t{md_indent}{format_file_path(file_comparison.first_file_meta.file_path)}\\\n')
+            f_part_dup.write(f'\t{md_indent}{format_file_path(file_comparison.second_file_meta.file_path)} \n\n')
 
 
     with open(partially_duplicated_detailed_report_file, "w+") as f_part_dup_detailed:
@@ -246,6 +251,9 @@ def traverse_directories(first, second):
     write_report_full_duplicates(duplicated_files)
     write_report_partial_duplicates(partially_duplicated_files)
     write_report_unique_files(fully_unique_first, fully_unique_second)
+
+
+    # Crate plots
 
     numbers = [file_comparison.get_similarity() for file_comparison in duplicated_files + partially_duplicated_files] + [0] * len(fully_unique_first)
     plot_similarity_bar_chart(numbers, 'All files', save_to_file_path=f'{similarity_bar_chart_picture_directory}/all_files.png')

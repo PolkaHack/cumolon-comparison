@@ -129,16 +129,6 @@ class Comparator:
 
     @staticmethod
     def compare_two_file_metas(first_file_meta: FileMeta, second_file_meta: FileMeta) -> FileComparison:
-        # if not os.path.exists(first_path):
-        #     print(f"File {first_path} does not exist")
-        #     return
-        # if not os.path.exists(second_path):
-        #     print(f"File {second_path} does not exist")
-        #     return
-        #
-        # first_file_meta = Comparator.get_file_meta(first_path)
-        # second_file_meta = Comparator.get_file_meta(second_path)
-
 
         if first_file_meta.is_picture() and second_file_meta.is_picture():
             if first_file_meta.file_name == second_file_meta.file_name:
