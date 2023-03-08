@@ -78,17 +78,18 @@ def write_report_partial_duplicates(partially_duplicated_files: list[FileCompari
 
 def write_report_unique_files(fully_unique_first: list[FileMeta], fully_unique_second: list[FileMeta]):
     with open(fully_unique_files, 'w+') as f_unique:
-        msg_1 = f'Found {len(fully_unique_first)} 100% unique files for first\n'
-        msg_2 = f'Found {len(fully_unique_second)} 100% unique files for second\n\n'
+        msg_1 = f'Found {len(fully_unique_first)} 100% unique files for first\\\n'
+        msg_2 = f'Found {len(fully_unique_second)} 100% unique files for second'
         print(msg_1.replace('\n', ''))
         print(msg_2.replace('\n', ''))
         f_unique.write(msg_1)
         f_unique.write(msg_2)
+        f_unique.write('<br/><br/><br/><br/>\n')
         for first_file_meta in fully_unique_first:
-            f_unique.write(f'\t{len(first_file_meta.line_metas)} lines \t\t {first_file_meta.file_path}\n')
-        f_unique.write('\n\n')
+            f_unique.write(f'{md_indent}{len(first_file_meta.line_metas)} lines \t\t {format_file_path(first_file_meta.file_path)}\\\n')
+        f_unique.write('<br/><br/><br/><br/>\n')
         for second_file_meta in fully_unique_second:
-            f_unique.write(f'\t{len(second_file_meta.line_metas)} lines \t\t {second_file_meta.file_path}\n')
+            f_unique.write(f'{md_indent}{len(second_file_meta.line_metas)} lines \t\t {format_file_path(second_file_meta.file_path)}\\\n')
 
 
 
@@ -261,16 +262,19 @@ def traverse_directories(first, second):
     numbers2 = [file_comparison.get_similarity() for file_comparison in partially_duplicated_files] + [0] * len(fully_unique_first)
     plot_similarity_bar_chart(numbers2, 'Full duplicates excluded', save_to_file_path=f'{similarity_bar_chart_picture_directory}/full_matches_excluded.png')
 
-    duplicated_lines_of_code = 0
-    unique_lines_of_code = 0
-    for d in all_dups:
-        duplicated_lines_of_code += len(d.duplicate_lines)
-        unique_lines_of_code += len(d.unique_in_first)
-    unique_lines_of_code += len(fully_unique_first)
-
-    print(f'Duplicated lines of code {duplicated_lines_of_code}, unique lines of code {unique_lines_of_code}')
+    # duplicated_lines_of_code = 0
+    # unique_lines_of_code = 0
+    # for d in all_dups:
+    #     duplicated_lines_of_code += len(d.duplicate_lines)
+    #     unique_lines_of_code += len(d.unique_in_first)
+    # unique_lines_of_code += len(fully_unique_first)
+    #
+    # print(f'Duplicated lines of code {duplicated_lines_of_code}, unique lines of code {unique_lines_of_code}')
     threshold = 50
-    print(f'{len(list(filter(lambda x: x.get_similarity() > threshold, all_dups))) * 1.0 / (len(all_dups) + len(fully_unique_first) + len(fully_unique_second)) * 100}% files have similarity above {threshold}%')
+    length_of_all_comparisons = len(all_dups) + len(fully_unique_first) + len(fully_unique_second)
+    length_of_over_threshold = len(list(filter(lambda x: x.get_similarity() > threshold, all_dups)))
+    print(f'{len(duplicated_files) * 1.0 / length_of_all_comparisons * 100}% are completely identical')
+    print(f'{length_of_over_threshold * 1.0 / length_of_all_comparisons * 100}% files have similarity above {threshold}%')
 
 
 
