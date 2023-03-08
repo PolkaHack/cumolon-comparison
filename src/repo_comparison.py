@@ -2,7 +2,7 @@ import os
 import filecmp
 import hashlib
 from collections import defaultdict
-from .comparator import Comparator, FileMeta, FileComparison
+from .comparator import Comparator, FileMeta, FileComparison, LineMeta
 from .plot import plot_similarity_bar_chart
 
 
@@ -41,39 +41,38 @@ def write_report_partial_duplicates(partially_duplicated_files: list[FileCompari
     msg = f'Found {len(partially_duplicated_files)} partially duplicated files:\n\n'
     print(msg.replace('\n', ''))
 
+    def create_header(file_comparison: FileComparison):
+        return f'Partially similar files found. First length {len(file_comparison.first_file_meta.line_metas)}, '\
+               f'Second length {len(file_comparison.second_file_meta.line_metas)},  '\
+               f'The files are {100 - file_comparison.uniqueness_score}% identical'\
+               f'The files differ in {max(len(file_comparison.unique_in_first), len(file_comparison.unique_in_second))} lines:\\\n'
+
+    def create_diff_line_with_line_nr(file_meta: LineMeta):
+        return f'\t\t{md_indent*2}{file_meta.line_nr}\t| {file_meta.content}\\\n'
+
+
     with open(partially_duplicated_report_file, "w+") as f_part_dup:
         f_part_dup.write(msg)
-
         for file_comparison in partially_duplicated_files:
-            f_part_dup.write(
-                f'Partially similar files found. First length {len(file_comparison.first_file_meta.line_metas)}, '
-                f'Second length {len(file_comparison.second_file_meta.line_metas)}, '
-                f'The files are {100 - file_comparison.uniqueness_score}% identical, '
-                f'The files differ in {max(len(file_comparison.unique_in_first), len(file_comparison.unique_in_second))} lines:\\\n')
+            f_part_dup.write(create_header(file_comparison))
             if file_comparison.first_file_meta.file_name != file_comparison.second_file_meta.file_name:
-                f_part_dup.write('File names differ\n')
+                f_part_dup.write('File names differ\\\n')
             f_part_dup.write(f'\t{md_indent}{format_file_path(file_comparison.first_file_meta.file_path)}\\\n')
             f_part_dup.write(f'\t{md_indent}{format_file_path(file_comparison.second_file_meta.file_path)} \n\n')
 
-
     with open(partially_duplicated_detailed_report_file, "w+") as f_part_dup_detailed:
         f_part_dup_detailed.write(msg)
-
         for file_comparison in partially_duplicated_files:
-            f_part_dup_detailed.write(
-                f'Partially similar files found. First length {len(file_comparison.first_file_meta.line_metas)}, '
-                f'Second length {len(file_comparison.second_file_meta.line_metas)},  '
-                f'The files are {100 - file_comparison.uniqueness_score}% identical'
-                f'The files differ in {max(len(file_comparison.unique_in_first), len(file_comparison.unique_in_second))} lines:\n')
-            f_part_dup_detailed.write(f'\t{file_comparison.first_file_meta.file_path}\n')
-            f_part_dup_detailed.write(f'\t{file_comparison.second_file_meta.file_path}\n')
+            f_part_dup_detailed.write(create_header(file_comparison))
+            f_part_dup_detailed.write(f'\t{md_indent}{format_file_path(file_comparison.first_file_meta.file_path)}\\\n')
+            f_part_dup_detailed.write(f'\t{md_indent}{format_file_path(file_comparison.second_file_meta.file_path)}\\\n')
 
-            f_part_dup_detailed.write(f'\tUnique lines in first:\n')
+            f_part_dup_detailed.write(f'\t{md_indent}Unique lines in first:\\\n')
             for first_line_meta in sorted(file_comparison.unique_in_first, key=lambda line_meta: line_meta.line_nr):
-                f_part_dup_detailed.write(f'\t\t{first_line_meta.line_nr}\t| {first_line_meta.content}\n')
-            f_part_dup_detailed.write(f'\n\tUnique lines in second:\n')
+                f_part_dup_detailed.write(create_diff_line_with_line_nr(first_line_meta))
+            f_part_dup_detailed.write(f'\t{md_indent}Unique lines in second:\\\n')
             for second_line_meta in sorted(file_comparison.unique_in_second, key=lambda line_meta: line_meta.line_nr):
-                f_part_dup_detailed.write(f'\t\t{second_line_meta.line_nr}\t| {second_line_meta.content}\n')
+                f_part_dup_detailed.write(create_diff_line_with_line_nr(second_line_meta))
             f_part_dup_detailed.write(f'\n\n')
 
 
@@ -254,8 +253,9 @@ def traverse_directories(first, second):
 
 
     # Crate plots
+    all_dups = duplicated_files + partially_duplicated_files
 
-    numbers = [file_comparison.get_similarity() for file_comparison in duplicated_files + partially_duplicated_files] + [0] * len(fully_unique_first)
+    numbers = [file_comparison.get_similarity() for file_comparison in all_dups] + [0] * len(fully_unique_first)
     plot_similarity_bar_chart(numbers, 'All files', save_to_file_path=f'{similarity_bar_chart_picture_directory}/all_files.png')
 
     numbers2 = [file_comparison.get_similarity() for file_comparison in partially_duplicated_files] + [0] * len(fully_unique_first)
@@ -263,12 +263,14 @@ def traverse_directories(first, second):
 
     duplicated_lines_of_code = 0
     unique_lines_of_code = 0
-    for d in duplicated_files + partially_duplicated_files:
+    for d in all_dups:
         duplicated_lines_of_code += len(d.duplicate_lines)
         unique_lines_of_code += len(d.unique_in_first)
     unique_lines_of_code += len(fully_unique_first)
 
     print(f'Duplicated lines of code {duplicated_lines_of_code}, unique lines of code {unique_lines_of_code}')
+    threshold = 50
+    print(f'{len(list(filter(lambda x: x.get_similarity() > threshold, all_dups))) * 1.0 / (len(all_dups) + len(fully_unique_first) + len(fully_unique_second)) * 100}% files have similarity above {threshold}%')
 
 
 
