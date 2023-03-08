@@ -1,6 +1,7 @@
 import os
 import filecmp
 import hashlib
+from collections import defaultdict
 from .comparator import Comparator, FileMeta, FileComparison
 from .plot import plot_similarity_bar_chart
 
@@ -86,6 +87,8 @@ def write_report_unique_files(fully_unique_first: list[FileMeta], fully_unique_s
             f_unique.write(f'\t{len(second_file_meta.line_metas)} lines \t\t {second_file_meta.file_path}\n')
 
 
+
+
 def traverse_directories(first, second):
     first_file_metas_list = Comparator.create_file_metas_for_folder(first)
     second_file_metas_list = Comparator.create_file_metas_for_folder(second)
@@ -100,44 +103,142 @@ def traverse_directories(first, second):
     fully_unique_first: list[FileMeta] = list()
     fully_unique_second: list[FileMeta] = list()
 
+
+
     for file_hash, file_meta in dict(first_file_hash_to_file_metas).items():
         if file_hash in second_file_hash_to_file_metas:
             duplicated_files.append(Comparator.compare_two_file_metas(file_meta, second_file_hash_to_file_metas[file_hash]))
             del first_file_hash_to_file_metas[file_hash]
             del second_file_hash_to_file_metas[file_hash]
 
-    for first_file_hash, first_file_meta in dict(first_file_hash_to_file_metas).items():
-        nearest_to_first: FileComparison = None
-        for second_file_hash, second_file_meta in dict(second_file_hash_to_file_metas).items():
-            file_comparison: FileComparison = Comparator.compare_two_file_metas(first_file_meta, second_file_meta)
-            if not nearest_to_first:
-                nearest_to_first = file_comparison
-            elif nearest_to_first.uniqueness_score > file_comparison.uniqueness_score:
-                nearest_to_first = file_comparison
+
+   # v3 extremely inefficient, but very promising approach
+
+    comparison_matrix: list[list[FileComparison]] = [
+        [Comparator.compare_two_file_metas(first_file_meta, second_file_meta)
+         for second_file_hash, second_file_meta in dict(second_file_hash_to_file_metas).items()]
+        for first_file_hash, first_file_meta in dict(first_file_hash_to_file_metas).items()
+    ]
+
+    comp_matrix_last_size = None
+    while comp_matrix_last_size != len(comparison_matrix):
+        if len(comparison_matrix) == 0 or len(comparison_matrix[0]) == 0:
+            break
+        comp_matrix_last_size = len(comparison_matrix)
+        for row in list(comparison_matrix):
+            # find best for first
+            best_for_first: FileComparison = row[0]
+            best_j = 0
+            for j, file_comparison in enumerate(row):
+                if file_comparison.get_similarity() > best_for_first.get_similarity():
+                    best_for_first = file_comparison
+                    best_j = j
+
+            # find best for second´
+            best_for_second: FileComparison = comparison_matrix[0][best_j]
+            best_i = 0
+            for i in range(len(comparison_matrix)):
+                file_comparison_2 = comparison_matrix[i][best_j]
+                if file_comparison_2.get_similarity() > best_for_second.get_similarity():
+                    best_for_second = file_comparison_2
+                    best_i = i
+
+            if best_for_second.first_file_meta is best_for_first.first_file_meta:
+                # match found
+                if best_for_first.get_similarity() == 100:
+                    duplicated_files.append(best_for_first)
+                elif best_for_first.get_similarity() > similarity_lower_bound:
+                    partially_duplicated_files.append(best_for_first)
+                else:
+                    continue
+
+                # delete row and column
+                comparison_matrix.pop(best_i)
+                for row in comparison_matrix:
+                    row.pop(best_j)
+                break
 
 
-         # bining of the results
+    for row in list(comparison_matrix):
+        if row:
+            fully_unique_first.append(row[0].first_file_meta)
 
-        if (100 - nearest_to_first.uniqueness_score) < similarity_lower_bound and nearest_to_first.first_file_meta.file_name != nearest_to_first.second_file_meta.file_name:
-            # different files
-            fully_unique_first.append(nearest_to_first.first_file_meta)
-            fully_unique_second.append(nearest_to_first.second_file_meta)
-            del first_file_hash_to_file_metas[nearest_to_first.first_file_meta.file_hash]
-            del second_file_hash_to_file_metas[nearest_to_first.second_file_meta.file_hash]
+    if comparison_matrix:
+        for comp in comparison_matrix[0]:
+            fully_unique_second.append(comp.second_file_meta)
 
-        elif nearest_to_first.uniqueness_score == 0:
-            duplicated_files.append(nearest_to_first)
-            del first_file_hash_to_file_metas[nearest_to_first.first_file_meta.file_hash]
-            del second_file_hash_to_file_metas[nearest_to_first.second_file_meta.file_hash]
+    # v2
+    # file to matches
+    # first_comparison_dict: dict[str, list[FileComparison]] = defaultdict(list)
+    # for first_file_hash, first_file_meta in first_file_hash_to_file_metas.items():
+    #     for second_file_hash, second_file_meta in second_file_hash_to_file_metas.items():
+    #         first_comparison_dict[first_file_hash].append(
+    #             Comparator.compare_two_file_metas(first_file_meta, second_file_meta))
+    # for k, v in first_comparison_dict.items():
+    #     v.sort(key=lambda elem: elem.uniqueness_score)
+    #
+    # second_comparison_dict: dict[str, list[FileComparison]] = defaultdict(list)
+    # for second_file_hash, second_file_meta in second_file_hash_to_file_metas.items():
+    #     for first_file_hash, first_file_meta in first_file_hash_to_file_metas.items():
+    #         second_comparison_dict[second_file_hash].append(
+    #             Comparator.compare_two_file_metas(second_file_meta, first_file_meta))
+    # for k, v in second_comparison_dict.items():
+    #     v.sort(key=lambda elem: elem.uniqueness_score)
+    #
+    #
+    # for first_file_hash, sorted_file_comparison_list in dict(first_comparison_dict).items():
+    #     most_similar_comparison: FileComparison = sorted_file_comparison_list[-1]
+    #     most_similar_for_first = most_similar_comparison.second_file_meta
+    #
+    #     most_similar_for_second = second_comparison_dict[most_similar_for_first.file_hash][-1].second_file_meta
+    #
+    #     if first_file_hash == most_similar_for_second.file_hash and most_similar_comparison.get_similarity() > similarity_lower_bound:
+    #         # bidirectional match
+    #         partially_duplicated_files.append(most_similar_comparison)
+    #         del first_comparison_dict[first_file_hash]
+    #         del second_comparison_dict[most_similar_for_first.file_hash]
+    #
+    # for first_file_hash, _ in dict(first_comparison_dict).items():
+    #     fully_unique_first.append(first_file_hash_to_file_metas.get(first_file_hash))
+    #
+    # for second_file_hash, _ in dict(second_comparison_dict).items():
+    #     fully_unique_second.append(second_file_hash_to_file_metas.get(second_file_hash))
 
-        elif nearest_to_first.uniqueness_score == 100:
-            fully_unique_first.append(first_file_meta)
+    #v1
 
-        else:
-            # partially overlapping
-            partially_duplicated_files.append(nearest_to_first)
 
-    fully_unique_second.extend(second_file_hash_to_file_metas.values())
+    # for first_file_hash, first_file_meta in dict(first_file_hash_to_file_metas).items():
+    #     nearest_to_first: FileComparison = None
+    #     for second_file_hash, second_file_meta in dict(second_file_hash_to_file_metas).items():
+    #         file_comparison: FileComparison = Comparator.compare_two_file_metas(first_file_meta, second_file_meta)
+    #         if not nearest_to_first:
+    #             nearest_to_first = file_comparison
+    #         elif nearest_to_first.uniqueness_score > file_comparison.uniqueness_score:
+    #             nearest_to_first = file_comparison
+    #
+    #
+    #      # bining of the results
+    #
+    #     if (100 - nearest_to_first.uniqueness_score) < similarity_lower_bound and nearest_to_first.first_file_meta.file_name != nearest_to_first.second_file_meta.file_name:
+    #         # different files
+    #         fully_unique_first.append(nearest_to_first.first_file_meta)
+    #         fully_unique_second.append(nearest_to_first.second_file_meta)
+    #         del first_file_hash_to_file_metas[nearest_to_first.first_file_meta.file_hash]
+    #         del second_file_hash_to_file_metas[nearest_to_first.second_file_meta.file_hash]
+    #
+    #     elif nearest_to_first.uniqueness_score == 0:
+    #         duplicated_files.append(nearest_to_first)
+    #         del first_file_hash_to_file_metas[nearest_to_first.first_file_meta.file_hash]
+    #         del second_file_hash_to_file_metas[nearest_to_first.second_file_meta.file_hash]
+    #
+    #     elif nearest_to_first.uniqueness_score == 100:
+    #         fully_unique_first.append(first_file_meta)
+    #
+    #     else:
+    #         # partially overlapping
+    #         partially_duplicated_files.append(nearest_to_first)
+    #
+    # fully_unique_second.extend(second_file_hash_to_file_metas.values())
 
 
     # write files
@@ -145,8 +246,21 @@ def traverse_directories(first, second):
     write_report_full_duplicates(duplicated_files)
     write_report_partial_duplicates(partially_duplicated_files)
     write_report_unique_files(fully_unique_first, fully_unique_second)
-    plot_similarity_bar_chart(duplicated_files + partially_duplicated_files, 'All files', save_to_file_path=f'{similarity_bar_chart_picture_directory}/all_files.png')
-    plot_similarity_bar_chart(partially_duplicated_files, 'Full duplicates excluded', save_to_file_path=f'{similarity_bar_chart_picture_directory}/full_matches_excluded.png')
+
+    numbers = [file_comparison.get_similarity() for file_comparison in duplicated_files + partially_duplicated_files] + [0] * len(fully_unique_first)
+    plot_similarity_bar_chart(numbers, 'All files', save_to_file_path=f'{similarity_bar_chart_picture_directory}/all_files.png')
+
+    numbers2 = [file_comparison.get_similarity() for file_comparison in partially_duplicated_files] + [0] * len(fully_unique_first)
+    plot_similarity_bar_chart(numbers2, 'Full duplicates excluded', save_to_file_path=f'{similarity_bar_chart_picture_directory}/full_matches_excluded.png')
+
+    duplicated_lines_of_code = 0
+    unique_lines_of_code = 0
+    for d in duplicated_files + partially_duplicated_files:
+        duplicated_lines_of_code += len(d.duplicate_lines)
+        unique_lines_of_code += len(d.unique_in_first)
+    unique_lines_of_code += len(fully_unique_first)
+
+    print(f'Duplicated lines of code {duplicated_lines_of_code}, unique lines of code {unique_lines_of_code}')
 
 
 

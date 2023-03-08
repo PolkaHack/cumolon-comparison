@@ -3,9 +3,8 @@ from .comparator import FileComparison
 import numpy as np
 
 
-def plot_similarity_bar_chart(duplicated_files: list[FileComparison], title: str, save_to_file_path: str = None):
+def plot_similarity_bar_chart(numbers: list[int], title: str, save_to_file_path: str = None):
     plt.figure()
-    numbers = [file_comparison.get_similarity() for file_comparison in duplicated_files]
     bins = np.arange(0, 101, 5)
     plt.hist(numbers, bins=bins)
     plt.title(title)

@@ -5,6 +5,7 @@ from pathlib import Path
 import typing as t
 from collections import defaultdict
 
+exclude_files_from_comparison = ['package-lock.json']
 
 class LineMeta:
     def __init__(self, file_path: str, line_nr: int, content: str, content_hash: str):
@@ -54,6 +55,7 @@ class FileComparison:
 
     def get_similarity(self):
         return 100 - self.uniqueness_score
+
 
 class Comparator:
 
@@ -120,7 +122,9 @@ class Comparator:
         for root, dirs, files in os.walk(folder_path):
             for file in files:
                 file_path = os.path.join(root, file)
-                file_metas.append(Comparator.get_file_meta(file_path))
+                file_name = Path(file_path).name
+                if file_name not in exclude_files_from_comparison:
+                    file_metas.append(Comparator.get_file_meta(file_path))
         return file_metas
 
     @staticmethod
